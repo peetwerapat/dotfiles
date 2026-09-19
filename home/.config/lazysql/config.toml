@@ -1,0 +1,9 @@
+[application]
+DefaultPageSize = 300
+DisableSidebar = false
+SidebarOverlay = false
+MaxQueryHistoryPerConnection = 100
+TreeWidth = 30
+JSONViewerWordWrap = false
+EnterOpensJSONViewer = false
+ConfirmOnQuit = true

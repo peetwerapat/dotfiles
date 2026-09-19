@@ -1,0 +1,216 @@
+/*
+ * -----------------------------------------------------
+ * Rofi :: blue glass
+ *
+ * Glass panel (blurred by ~/.config/hypr/conf/layerrules.conf),
+ * solid blue selection, blue prompt. Colors come from
+ * ~/.config/rofi/colors.rasi (matugen, accent pinned blue).
+ * -----------------------------------------------------
+ */
+
+/* ---- Configuration ---- */
+configuration {
+    modi:                       "drun,filebrowser,window,run";
+    font:                       "Adwaita Sans 11";
+    show-icons:                 true;
+    icon-theme:                 "kora";
+    display-drun:                "apps";
+    display-run:                 "run";
+    display-filebrowser:         "files";
+    display-window:              "windows";
+    drun-display-format:        "{name}\n<span size='small' alpha='55%'>{generic}</span>";
+    hover-select:               false;
+    scroll-method:              1;
+    me-select-entry:            "";
+    me-accept-entry:            "MousePrimary";
+    window-format:              "{w} · {c} · {t}";
+}
+
+/* ---- Load colors ---- */
+@theme "~/.config/rofi/colors.rasi"
+
+/* ---- Border width ---- */
+* { border-width: 1px; }
+
+/* ---- Border radius ---- */
+* { border-radius: 18px; }
+
+/* ---- Map colors ---- */
+* {
+    fg:          @on-surface;
+    fg-muted:    @on-surface-variant;
+    fg-faint:    @outline;
+    hairline:    @outline-variant;
+    sel-bg:      @accent;
+    sel-fg:      @on-accent;
+
+    /* kept for compatibility with the other config-*.rasi files */
+    color11:     @outline-variant;
+    color5:      @surface-container-high;
+    foreground:  @on-surface;
+    background:  @surface-glass;
+}
+
+/* ---- Main ---- */
+window {
+    width:                       42em;
+    transparency:                "real";
+    fullscreen:                  false;
+    enabled:                     true;
+    cursor:                      "default";
+    spacing:                     0em;
+    padding:                     0.6em;
+    border:                      @border-width;
+    border-color:                @hairline;
+    border-radius:               @border-radius;
+    background-color:            @background;
+}
+
+mainbox {
+    enabled:                     true;
+    spacing:                     0em;
+    padding:                     0em;
+    orientation:                 vertical;
+    children:                    [ "inputbar", "listview", "mode-switcher" ];
+    background-color:            transparent;
+}
+
+/* ---- Input ---- */
+inputbar {
+    enabled:                     true;
+    spacing:                     0.7em;
+    padding:                     0.7em 0.9em;
+    margin:                      0em 0em 0.5em 0em;
+    children:                    [ "textbox-prompt-colon", "entry" ];
+    background-color:            @surface-container-glass;
+    border-radius:               12px;
+}
+
+textbox-prompt-colon {
+    enabled:                     true;
+    expand:                      false;
+    str:                         "󰍉";
+    padding:                     0em 0.15em 0em 0.15em;
+    text-color:                  @accent;
+    background-color:            transparent;
+    vertical-align:              0.5;
+}
+
+entry {
+    enabled:                     true;
+    padding:                     0em;
+    background-color:            transparent;
+    text-color:                  @fg;
+    cursor:                      text;
+    placeholder:                 "Search apps, files, windows";
+    placeholder-color:           @fg-faint;
+    vertical-align:              0.5;
+}
+
+/* ---- List ---- */
+listview {
+    padding:                     0.15em 0em;
+    spacing:                     0.15em;
+    margin:                      0em;
+    enabled:                     true;
+    columns:                     1;
+    lines:                       6;
+    cycle:                       true;
+    dynamic:                     true;
+    scrollbar:                   false;
+    layout:                      vertical;
+    reverse:                     false;
+    fixed-height:                false;
+    fixed-columns:               true;
+    cursor:                      "default";
+    background-color:            transparent;
+    text-color:                  @fg;
+}
+
+/* ---- Elements ---- */
+element {
+    enabled:                     true;
+    spacing:                     0.85em;
+    padding:                     0.55em 0.8em;
+    margin:                      0em;
+    cursor:                      pointer;
+    border-radius:               12px;
+    background-color:            transparent;
+    text-color:                  @fg-muted;
+}
+
+element normal.normal,
+element normal.urgent,
+element normal.active,
+element alternate.normal,
+element alternate.urgent,
+element alternate.active {
+    background-color:            transparent;
+    text-color:                  @fg-muted;
+}
+
+element selected.normal,
+element selected.urgent,
+element selected.active {
+    background-color:            @sel-bg;
+    text-color:                  @sel-fg;
+}
+
+element-icon {
+    size:                        2.1em;
+    cursor:                      inherit;
+    background-color:            transparent;
+    text-color:                  inherit;
+    vertical-align:              0.5;
+}
+
+element-text {
+    vertical-align:              0.5;
+    horizontal-align:            0.0;
+    cursor:                      inherit;
+    background-color:            transparent;
+    text-color:                  inherit;
+}
+
+/* ---- Modes ---- */
+mode-switcher {
+    orientation:                 horizontal;
+    enabled:                     true;
+    padding:                     0.5em 0em 0em 0em;
+    spacing:                     0.4em;
+    background-color:            transparent;
+}
+
+button {
+    cursor:                      pointer;
+    padding:                     0.45em 0em;
+    border-radius:               10px;
+    background-color:            @surface-container-glass;
+    text-color:                  @fg-faint;
+}
+
+button selected {
+    background-color:            @accent-container;
+    text-color:                  @on-accent-container;
+}
+
+/* ---- Messages ---- */
+message {
+    background-color:            transparent;
+    margin:                      0.25em 0em 0em 0em;
+}
+
+error-message {
+    text-color:                  @fg;
+    background-color:            transparent;
+    text-transform:              capitalize;
+    children:                    [ "textbox" ];
+}
+
+textbox {
+    text-color:                  inherit;
+    background-color:            transparent;
+    vertical-align:              0.5;
+    horizontal-align:            0.5;
+    padding:                     0.5em;
+}

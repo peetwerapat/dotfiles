@@ -1,0 +1,64 @@
+/* -----------------------------------------------------
+ * wlogout :: minimal
+ * Blurred wallpaper behind a row of flat tiles, blue
+ * accent on the focused one. Palette from Matugen.
+ * ----------------------------------------------------- */
+
+@import 'colors.css';
+
+* {
+    font-family: "Adwaita Sans", "Cantarell", sans-serif;
+    background-image: none;
+    box-shadow: none;
+    text-shadow: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+window {
+    /* scrim over the blurred wallpaper so the tiles read clearly */
+    background-image: linear-gradient(alpha(@surface, 0.62), alpha(@surface, 0.72)),
+                      url("../../.cache/wallpaper/blurred.png");
+    background-size: cover, cover;
+    background-position: center, center;
+    color: @on_surface;
+    font-size: 13px;
+}
+
+button {
+    background-color: alpha(@surface, 0.62);
+    border: 1px solid alpha(@on_surface, 0.12);
+    border-radius: 20px;
+    color: alpha(@on_surface, 0.85);
+    margin: 10px;
+    padding: 0;
+    background-repeat: no-repeat;
+    background-position: center 38%;
+    background-size: 22%;
+}
+
+button:hover,
+button:focus {
+    background-color: alpha(@accent, 0.30);
+    border: 2px solid @accent;
+    color: @accent;
+    background-size: 26%;
+    margin: 8px;
+    border-radius: 20px;
+}
+
+button span {
+    font-size: 1.05em;
+    font-weight: 500;
+    color: alpha(@on_surface, 0.92);
+}
+
+/* -----------------------------------------------------
+ * Buttons
+ * ----------------------------------------------------- */
+
+#lock      { background-image: image(url("icons/lock.png")); }
+#logout    { background-image: image(url("icons/logout.png")); }
+#suspend   { background-image: image(url("icons/suspend.png")); }
+#hibernate { background-image: image(url("icons/hibernate.png")); }
+#shutdown  { background-image: image(url("icons/shutdown.png")); }
+#reboot    { background-image: image(url("icons/reboot.png")); }

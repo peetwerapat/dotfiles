@@ -1,0 +1,14 @@
+gui:
+  keybinding:
+    universal:
+      quit: "q"
+      openMenu: "o"
+      scrollUp: "k"
+      scrollDown: "j"
+      select: "l"
+      back: "h"
+      refresh: "r"
+      filter: "/"
+      toggleTreeView: "t"
+      nextPage: "Ctrl+d"
+      prevPage: "Ctrl+u"

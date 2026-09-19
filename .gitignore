@@ -1,0 +1,12 @@
+# nested git repos of the standalone hypr / waybar / nvim configs
+home/**/.git/
+
+# editor and tool state
+home/.vim/undodir/
+home/.vim/swap/
+home/.vim/backup/
+**/__pycache__/
+**/*.log
+
+# backups created by install.sh
+.dotfiles-backup/
