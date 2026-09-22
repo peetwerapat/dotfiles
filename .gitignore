@@ -10,3 +10,11 @@ home/.vim/backup/
 
 # backups created by install.sh
 .dotfiles-backup/
+
+# runtime state written by the apps themselves
+home/.config/htop/htop_history
+home/.config/lazysql/history/
+
+# lazysql's live config.toml carries database URLs with passwords.
+# The tracked copy is deliberately kept to the [application] block only —
+# never sync ~/.config/lazysql/config.toml over it.

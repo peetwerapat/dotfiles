@@ -47,7 +47,7 @@ palette, and scripts degrade quietly when optional hardware isn't there.
 | Wallpaper | `hypr/hyprpaper.conf`, `waypaper/` | `hyprpaper` `waypaper` |
 | Bar | `waybar/config.jsonc` + `style.css` | `waybar` |
 | Launcher / menus | `rofi/*.rasi` | `rofi-wayland` |
-| Notifications | `swaync/` | `swaync` |
+| Notifications | `hypr/swaync/` (`swaync/` is a symlink to it) | `swaync` |
 | Power menu | `wlogout/` | `wlogout` |
 | Dock | `nwg-dock-hyprland/` | `nwg-dock-hyprland` |
 | Colors | `matugen/` — templates for every app above | `matugen` |
@@ -57,6 +57,9 @@ palette, and scripts degrade quietly when optional hardware isn't there.
 | Shell | `.zshrc`, `.zprofile`, `.bashrc` | `zsh` + Oh My Zsh |
 | GTK / Qt | `gtk-3.0/` `gtk-4.0/` `qt6ct/` `nwg-look/` `xsettingsd/` | `qt6ct` `nwg-look` `xsettingsd` |
 | CLI tools | `git/` `htop/` `lazydocker/` `lazysql/` `fastfetch/` | — |
+
+> `lazysql/config.toml` is tracked with only its `[application]` block — the live
+> file also holds database URLs with passwords, so it is never synced back here.
 
 ## Requirements
 
@@ -219,7 +222,7 @@ hypr/scripts/wallpaper.sh ──► hyprpaper (sets it, caches the path)
       ├──► kitty/colors-matugen.conf
       ├──► gtk-3.0 & gtk-4.0/colors.css
       ├──► qt6ct/colors/matugen.conf
-      ├──► swaync/, wlogout/, nwg-dock/colors.css
+      ├──► hypr/swaync/, wlogout/, nwg-dock/colors.css
       └──► ~/.cache/wal/{colors.json,sequences}
 ```
 
@@ -239,7 +242,8 @@ Apply a new wallpaper — and rebuild everything above — with:
     ├── .zshrc .zprofile .bashrc .bash_profile
     ├── .gtkrc-2.0 .Xresources .yarnrc
     └── .config/
-        ├── hypr/ waybar/ rofi/ swaync/ wlogout/ nwg-dock-hyprland/
+        ├── hypr/ waybar/ rofi/ wlogout/ nwg-dock-hyprland/
+        │   └── swaync -> hypr/swaync
         ├── matugen/ waypaper/
         ├── gtk-3.0/ gtk-4.0/ qt6ct/ nwg-look/ xsettingsd/
         ├── kitty/ nvim/ vim/ tmux/ fastfetch/
