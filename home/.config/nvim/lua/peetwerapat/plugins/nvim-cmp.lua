@@ -101,6 +101,11 @@ return {
         completeopt = "menu,noselect",
       },
 
+      -- Keep completion suggestions in the popup, not duplicated inline.
+      experimental = {
+        ghost_text = false,
+      },
+
       formatting = {
         format = function(entry, vim_item)
           vim_item.kind = string.format(

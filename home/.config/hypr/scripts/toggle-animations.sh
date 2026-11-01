@@ -1,13 +1,14 @@
 #!/bin/bash
-cache_file="$HOME/.cache/toggle_animation"
-if [[ $(cat $HOME/.config/hypr/conf/animation.conf) == *"disabled"* ]]; then
-    echo ":: Toggle blocked by disabled.conf variation."
+set -euo pipefail
+
+cache_home="${XDG_CACHE_HOME:-$HOME/.cache}"
+cache_file="$cache_home/toggle_animation"
+mkdir -p "$cache_home"
+
+if [ -f "$cache_file" ]; then
+    hyprctl eval 'hl.config({ animations = { enabled = true } })'
+    rm "$cache_file"
 else
-    if [ -f $cache_file ]; then
-        hyprctl keyword animations:enabled true
-        rm $cache_file
-    else
-        hyprctl keyword animations:enabled false
-        touch $cache_file
-    fi
+    hyprctl eval 'hl.config({ animations = { enabled = false } })'
+    touch "$cache_file"
 fi

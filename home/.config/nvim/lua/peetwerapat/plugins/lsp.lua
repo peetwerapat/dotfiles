@@ -11,12 +11,44 @@ return {
   config = function()
     local typescript_tools = require("typescript-tools")
     local jdtls = require("jdtls")
+    local diagnostic_virtual_text_enabled = false
+    local lsp_inline_text_by_buffer = {}
+
+    local function set_diagnostic_virtual_text(enabled)
+      diagnostic_virtual_text_enabled = enabled
+      vim.diagnostic.config({
+        virtual_text = enabled and { spacing = 2 } or false,
+      })
+    end
+
+    local function set_lsp_inline_text(bufnr, enabled)
+      lsp_inline_text_by_buffer[bufnr] = enabled
+      if vim.lsp.inlay_hint then
+        pcall(vim.lsp.inlay_hint.enable, enabled, { bufnr = bufnr })
+      end
+      if vim.lsp.inline_completion then
+        pcall(vim.lsp.inline_completion.enable, enabled, { bufnr = bufnr })
+      end
+    end
+
+    vim.api.nvim_create_user_command("DiagnosticVirtualTextToggle", function()
+      set_diagnostic_virtual_text(not diagnostic_virtual_text_enabled)
+      vim.notify("Diagnostic virtual text " .. (diagnostic_virtual_text_enabled and "enabled" or "disabled"))
+    end, { desc = "Toggle inline diagnostic messages" })
+
+    vim.api.nvim_create_user_command("LspInlineTextToggle", function()
+      local bufnr = vim.api.nvim_get_current_buf()
+      local enabled = not lsp_inline_text_by_buffer[bufnr]
+      set_lsp_inline_text(bufnr, enabled)
+      vim.notify("LSP inline hints/completions " .. (enabled and "enabled" or "disabled"))
+    end, { desc = "Toggle LSP inlay hints and inline completions" })
 
     -- =========================
     -- Diagnostics UI (global)
     -- =========================
     vim.diagnostic.config({
-      virtual_text = true,
+      virtual_text = false,
+      virtual_lines = false,
       signs = true,
       underline = true,
       update_in_insert = false,
@@ -47,6 +79,9 @@ return {
     -- on_attach (shared)
     -- =========================
     local function on_attach(client, bufnr)
+      -- Prevent servers from adding inline hints/completions unless requested.
+      set_lsp_inline_text(bufnr, lsp_inline_text_by_buffer[bufnr] == true)
+
       local map = function(mode, lhs, rhs, desc)
         vim.keymap.set(mode, lhs, rhs, {
           buffer = bufnr,

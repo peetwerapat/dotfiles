@@ -49,7 +49,7 @@ return {
         preserve_window_proportions = false,
         number = false,
         relativenumber = false,
-        signcolumn = "yes",
+        signcolumn = "no",
       },
       renderer = {
         indent_markers = {
@@ -78,10 +78,6 @@ return {
         enable = false,
         update_cwd = false,
         ignore_list = {},
-      },
-      system_open = {
-        cmd = "",
-        args = {},
       },
       diagnostics = {
         enable = false,

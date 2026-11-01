@@ -8,6 +8,9 @@ x-scheme-handler/figma=figma-linux.desktop
 text/plain=org.gnome.TextEditor.desktop
 x-scheme-handler/postman=Postman.desktop
 x-scheme-handler/claude-cli=claude-code-url-handler.desktop
+x-scheme-handler/zcode=zcode.desktop
+x-scheme-handler/slack=slack.desktop
+x-scheme-handler/codex=chatgpt.desktop
 
 [Added Associations]
 text/plain=org.gnome.TextEditor.desktop;

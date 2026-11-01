@@ -42,7 +42,7 @@ palette, and scripts degrade quietly when optional hardware isn't there.
 
 | Area | Config | Package |
 |---|---|---|
-| Compositor | `hypr/` — split into `conf/*.conf` by topic | `hyprland` |
+| Compositor | `hyprland.lua` + `lua/*.lua`; legacy `hyprland.conf` and `conf/*.conf` are kept as backups | `hyprland` 0.55+ |
 | Lock / idle | `hypr/hyprlock.conf`, `hypr/hypridle.conf` | `hyprlock` `hypridle` |
 | Wallpaper | `hypr/hyprpaper.conf`, `waypaper/` | `hyprpaper` `waypaper` |
 | Bar | `waybar/config.jsonc` + `style.css` | `waybar` |
@@ -134,21 +134,21 @@ laptop*. Change these first:
 
 | File | What to change |
 |---|---|
-| `hypr/conf/monitors.conf` | Your monitor names, resolutions and positions |
-| `hypr/scripts/monitor-mode.sh` | The `MAIN_EDID` / `SIDE_EDID` product strings and the five layout functions — or drop the `SUPER+F1..F5` binds entirely |
-| `hypr/conf/keyboard.conf` | Keyboard layout and options |
+| `hypr/lua/monitors.lua` | Your monitor names, resolutions and positions |
+| `hypr/scripts/monitor-mode.sh` | The monitor layout modes and display-specific behavior — or drop the `SUPER+F1..F5` binds entirely |
+| `hypr/lua/input.lua` | Keyboard layout, input devices and gestures |
 | `waypaper/config.ini` | Wallpaper directory (defaults to `~/wallpaper/`) |
 | `hypr/scripts/wallpaper.sh` | `DEFAULT` wallpaper path |
 | `.zprofile` | `AQ_NO_ATOMIC` / `AQ_MGPU_NO_EXPLICIT` exist for a DisplayLink dock. Remove them unless you have one |
 | `.zshrc` | `OLLAMA_HOST` points at a private LAN address — change or delete |
 | `.config/git/config` | `user.name` / `user.email` |
 | `waybar/config.jsonc` | The `custom/trackpad-battery` module needs an Apple Magic Trackpad; remove it otherwise |
-| `hypr/conf/keybinds.conf` | App launchers assume `kitty`, `brave`, `nautilus`, `gnome-calculator` |
+| `hypr/lua/keybinds.lua` | App launchers assume `kitty`, `brave`, `nautilus`, `gnome-calculator` |
 
 Changing the look is mostly one file each: `waybar/style.css`,
-`rofi/config.rasi`, `hypr/conf/{decoration,animation}.conf`. Color *values*
-come from Matugen — edit `matugen/templates/*` rather than the generated
-`colors.*` files, which are overwritten on the next wallpaper change.
+`rofi/config.rasi`, and `hypr/lua/visuals.lua`. Color *values* come from
+Matugen — edit `matugen/templates/*` rather than the generated `colors.*`
+files, which are overwritten on the next wallpaper change.
 
 ## Keybindings
 

@@ -7,6 +7,9 @@
 #   trackpad-toggle.sh true        connect
 #   trackpad-toggle.sh false       disconnect
 #   trackpad-toggle.sh             flip the current state
+#
+# Disconnecting also blocks the device so it cannot reconnect on its
+# own (e.g. after resume). Only "true" unblocks and connects.
 # -----------------------------------------------------
 set -uo pipefail
 
@@ -27,6 +30,7 @@ case "${1:-toggle}" in
         ;;
     true)
         connected && exit 0
+        bluetoothctl unblock "$MAC" >/dev/null 2>&1
         if bluetoothctl connect "$MAC" >/dev/null 2>&1; then
             notify "$NAME" "Connected"
         else
@@ -34,8 +38,11 @@ case "${1:-toggle}" in
         fi
         ;;
     false)
-        connected || exit 0
-        bluetoothctl disconnect "$MAC" >/dev/null 2>&1
+        was_connected=false
+        connected && was_connected=true
+        # Block even when already disconnected, so auto reconnect stays off
+        bluetoothctl block "$MAC" >/dev/null 2>&1
+        $was_connected || exit 0
         notify "$NAME" "Disconnected"
         ;;
     toggle)

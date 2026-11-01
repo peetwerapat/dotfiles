@@ -39,16 +39,31 @@ find_connector() {
 
 # Best mode a monitor advertises as "<width> <height> <refresh>":
 # most pixels, and among those the highest refresh rate.
+# DisplayLink (DVI-I-*) is capped at 60Hz (flicker above that).
 # Prints nothing when the monitor is not connected.
 best_mode() {
-    hyprctl monitors all -j | jq -r --arg name "$1" '
+    local max_r=1000
+
+    case "$1" in
+        DVI-I-*) max_r=61 ;;
+    esac
+
+    hyprctl monitors all -j | jq -r --arg name "$1" --argjson max "$max_r" '
         [ .[] | select(.name == $name) | .availableModes[]
           | capture("^(?<w>[0-9]+)x(?<h>[0-9]+)@(?<r>[0-9.]+)")
-          | { w: (.w | tonumber), h: (.h | tonumber), r: (.r | tonumber) } ]
+          | { w: (.w | tonumber), h: (.h | tonumber), r: (.r | tonumber) }
+          | select(.r <= $max) ]
         | sort_by(.w * .h, .r)
         | last
         | if . then "\(.w) \(.h) \(.r)" else empty end
     '
+}
+
+# Every monitor Hyprland knows except the laptop panel,
+# enabled or not, in Hyprland's order.
+list_externals() {
+    hyprctl monitors all | awk -v laptop="$LAPTOP" \
+        '/^Monitor / && $2 != laptop {print $2}'
 }
 
 MAIN=""
@@ -91,6 +106,7 @@ SCALE="1"
 # =====================================================
 
 BATCH=()
+WORKSPACE_MAP=()
 
 set_monitor() {
     local name="$1"
@@ -101,6 +117,47 @@ set_monitor() {
     echo "[monitor] $name -> $config"
 
     BATCH+=("keyword monitor $name,$config")
+}
+
+set_workspace_monitor() {
+    local workspace="$1"
+    local monitor="$2"
+    local default_workspace="$3"
+
+    [ -n "$monitor" ] || return 0
+
+    echo "[workspace] $workspace -> $monitor"
+
+    BATCH+=("keyword workspace ${workspace}, monitor:${monitor}, default:${default_workspace}, persistent:false")
+    WORKSPACE_MAP+=("$workspace $monitor")
+}
+
+set_workspace_group() {
+    local monitor="$1"
+    local default_workspace="$2"
+    local workspace default
+
+    shift 2
+
+    for workspace in "$@"; do
+        default=false
+        [ "$workspace" = "$default_workspace" ] && default=true
+        set_workspace_monitor "$workspace" "$monitor" "$default"
+    done
+}
+
+apply_workspace_map() {
+    local workspaces mapping workspace monitor
+
+    workspaces="$(hyprctl workspaces -j)"
+
+    for mapping in "${WORKSPACE_MAP[@]}"; do
+        read -r workspace monitor <<<"$mapping"
+
+        if jq -e --argjson id "$workspace" 'any(.[]; .id == $id)' <<<"$workspaces" >/dev/null 2>&1; then
+            hyprctl dispatch moveworkspacetomonitor "$workspace $monitor" >/dev/null
+        fi
+    done
 }
 
 disable_monitor() {
@@ -144,7 +201,21 @@ MAIN_DESC="desc:LG Electronics 27GL850 009INRC1C502"
 SIDE_DESC="desc:Samsung Electric Company S24R35x H4TMA01205"
 
 restore_default_rules() {
+    local name
+
     BATCH+=("keyword monitor ,preferred,auto,1")
+
+    # Mode E also disables every other monitor by connector
+    # name (e.g. a USB-C DP-1 monitor). Those named rules win
+    # over the fallback, so replace them with the fallback
+    # config to turn such monitors back on.
+    for name in $(hyprctl monitors all | awk '/^Monitor /{print $2}'); do
+        case "$name" in
+            "$LAPTOP"|"$MAIN"|"$SIDE") continue ;;
+        esac
+        BATCH+=("keyword monitor ${name},preferred,auto,${SCALE}")
+    done
+
     BATCH+=("keyword monitor ${MAIN_DESC},${MAIN_NATIVE_RES},0x0,${SCALE}")
     BATCH+=("keyword monitor ${SIDE_DESC},preferred,auto,${SCALE}")
 }
@@ -181,18 +252,33 @@ begin_mode() {
 # Samsung = -1080x0
 # LG      = 0x0
 # eDP     = 2560x0
+# Workspaces: LG = 1,8,9,10 • Samsung = 2,3,4 • eDP-1 = 5,6,7
 # =====================================================
 
 mode_a() {
+    local lg_monitor side_monitor
+    local lg_default=1
+    local side_default=2
 
     begin_mode "A"
+
+    lg_monitor="$MAIN"
+    side_monitor="$SIDE"
+    [ -n "$lg_monitor" ] || { lg_monitor="$LAPTOP"; lg_default=""; }
+    [ -n "$side_monitor" ] || { side_monitor="$LAPTOP"; side_default=""; }
 
     set_monitor "$LAPTOP" "${LAPTOP_RES},2560x0,${SCALE}"
     set_monitor "$MAIN"   "${MAIN_NATIVE_RES},0x0,${SCALE}"
     # transform 1 = 90° rotation, 1920x1080 becomes logical 1080x1920
     set_monitor "$SIDE"   "${SIDE_RES},-1080x0,${SCALE},transform,1"
 
+    set_workspace_group "$lg_monitor" "$lg_default" 1 8 9 10
+    set_workspace_group "$side_monitor" "$side_default" 2 3 4
+    set_workspace_group "$LAPTOP" 5 5 6 7
+
     apply_layout "$MAIN"
+    apply_workspace_map
+    [ -n "$MAIN" ] && hyprctl dispatch focusmonitor "$MAIN" >/dev/null
 
     notify_mode \
         "A" \
@@ -205,8 +291,7 @@ mode_a() {
 #
 # HDMI-A-2 = TOP, at its best mode
 # eDP-1    = MAIN / bottom, focused
-# LG       = OFF
-# Samsung  = OFF
+# every other external monitor = OFF
 #
 # ┌────────────────┐
 # │    HDMI-A-2    │   0x-<height>
@@ -219,9 +304,11 @@ mode_a() {
 
 mode_b() {
 
-    local w h r
+    local w h r name
     local top_res="preferred"
     local top_h=1080
+    local top_workspace_monitor="$TOP"
+    local top_default=6
 
     begin_mode "B"
 
@@ -230,15 +317,23 @@ mode_b() {
     if [ -n "${w:-}" ]; then
         top_res="${w}x${h}@${r}"
         top_h="$h"
+    else
+        top_workspace_monitor="$LAPTOP"
+        top_default=""
     fi
 
-    # skip the LG if it is the HDMI-A-2 monitor itself
-    [ "$MAIN" = "$TOP" ] || disable_monitor "$MAIN"
-    disable_monitor "$SIDE"
+    for name in $(list_externals); do
+        [ "$name" = "$TOP" ] || disable_monitor "$name"
+    done
     set_monitor "$LAPTOP" "${LAPTOP_RES},0x0,${SCALE}"
     set_monitor "$TOP"    "${top_res},0x-${top_h},${SCALE}"
 
+    set_workspace_group "$LAPTOP" 1 1 2 3 4 5
+    set_workspace_group "$top_workspace_monitor" "$top_default" 6 7 8 9 10
+
     apply_layout "$LAPTOP"
+    apply_workspace_map
+    hyprctl dispatch focusmonitor "$LAPTOP" >/dev/null
 
     notify_mode \
         "B" \
@@ -247,50 +342,79 @@ mode_b() {
 
 
 # =====================================================
-# MODE C
+# MODES C / D
 #
-# Samsung = TOP
-# eDP-1   = MAIN
-# LG      = OFF
+# eDP-1 = MAIN + one external monitor, whichever it is
+# (Samsung, Arzopa over USB-C, anything). The first one
+# Hyprland lists is used at its best mode; any other
+# external monitor is turned OFF.
+#
+# C: external on TOP      D: external on the RIGHT
+#
+# ┌────────────────┐
+# │    external    │      ┌────────────┐ ┌──────────┐
+# └────────────────┘      │   eDP-1    │ │ external │
+# ┌────────────────┐      │    MAIN    │ │          │
+# │  eDP-1  MAIN   │      └────────────┘ └──────────┘
+# └────────────────┘
 # =====================================================
 
-mode_c() {
+mode_single_external() {
 
-    begin_mode "C"
+    local mode="$1"
+    local side="$2"
+    local ext="" name w h r
+    local ext_res="preferred"
+    local ext_h=1080
+    local pos
+    local ext_workspace_monitor
+    local ext_default=6
 
-    disable_monitor "$MAIN"
+    begin_mode "$mode"
+
+    for name in $(list_externals); do
+        if [ -z "$ext" ]; then
+            ext="$name"
+        else
+            disable_monitor "$name"
+        fi
+    done
+
+    read -r w h r <<<"$(best_mode "$ext")"
+
+    if [ -n "${w:-}" ]; then
+        ext_res="${w}x${h}@${r}"
+        ext_h="$h"
+    fi
+
+    case "$side" in
+        top)   pos="0x-${ext_h}" ;;
+        right) pos="1920x0" ;;
+    esac
+
     set_monitor "$LAPTOP" "${LAPTOP_RES},0x0,${SCALE}"
-    set_monitor "$SIDE"   "${SIDE_RES},0x-1080,${SCALE}"
+    set_monitor "$ext"    "${ext_res},${pos},${SCALE}"
+
+    ext_workspace_monitor="${ext:-$LAPTOP}"
+    [ -n "$ext" ] || ext_default=""
+    set_workspace_group "$LAPTOP" 1 1 2 3 4 5
+    set_workspace_group "$ext_workspace_monitor" "$ext_default" 6 7 8 9 10
 
     apply_layout "$LAPTOP"
+    apply_workspace_map
+    hyprctl dispatch focusmonitor "$LAPTOP" >/dev/null
 
     notify_mode \
-        "C" \
-        "eDP main • Samsung top"
+        "$mode" \
+        "eDP main • ${ext:-no external} ${side}"
 }
 
-
-# =====================================================
-# MODE D
-#
-# eDP-1   = MAIN
-# Samsung = RIGHT
-# LG      = OFF
-# =====================================================
+mode_c() {
+    mode_single_external "C" "top"
+}
 
 mode_d() {
-
-    begin_mode "D"
-
-    disable_monitor "$MAIN"
-    set_monitor "$LAPTOP" "${LAPTOP_RES},0x0,${SCALE}"
-    set_monitor "$SIDE"   "${SIDE_RES},1920x0,${SCALE}"
-
-    apply_layout "$LAPTOP"
-
-    notify_mode \
-        "D" \
-        "eDP main • Samsung right"
+    mode_single_external "D" "right"
 }
 
 
@@ -331,8 +455,11 @@ mode_e() {
 
     # added last so it wins over the rules above
     set_monitor "$LAPTOP" "${LAPTOP_RES},0x0,${SCALE}"
+    set_workspace_group "$LAPTOP" 1 1 2 3 4 5 6 7 8 9 10
 
     apply_layout "$LAPTOP"
+    apply_workspace_map
+    hyprctl dispatch focusmonitor "$LAPTOP" >/dev/null
 
     notify_mode \
         "E" \

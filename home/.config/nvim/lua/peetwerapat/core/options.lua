@@ -10,7 +10,8 @@ opt.autoindent = true
 opt.showtabline = 2
 
 -- line wrapping
-opt.wrap = false
+opt.wrap = true
+opt.linebreak = true
 
 -- searching
 opt.ignorecase = true
@@ -52,6 +53,9 @@ opt.hlsearch = true
 opt.incsearch = true
 
 opt.termguicolors = true
+-- Keep editor-owned floating windows and completion menus fully opaque.
+opt.winblend = 0
+opt.pumblend = 0
 opt.scrolloff = 8
 opt.signcolumn = "yes"
 opt.isfname:append("@-@")
